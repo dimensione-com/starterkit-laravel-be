@@ -2,9 +2,10 @@
 
 namespace App\Providers;
 
+use App\Models\Client;
 use Illuminate\Support\ServiceProvider;
-use App\Models\PersonalAccessToken;
-use Laravel\Sanctum\Sanctum;
+use Laravel\Passport\Passport;
+use Carbon\CarbonInterval;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -22,6 +23,12 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         //
-        Sanctum::usePersonalAccessTokenModel(PersonalAccessToken::class);
+        //Sanctum::usePersonalAccessTokenModel(PersonalAccessToken::class);
+        //Passport::loadKeysFrom(__DIR__ . '/../secrets/oauth');
+        Passport::enablePasswordGrant();
+        Passport::tokensExpireIn(CarbonInterval::days(15));
+        Passport::refreshTokensExpireIn(CarbonInterval::days(30));
+        Passport::personalAccessTokensExpireIn(CarbonInterval::months(6));
+        Passport::useClientModel(Client::class);
     }
 }

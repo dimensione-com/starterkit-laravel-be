@@ -84,6 +84,8 @@ return [
 
     'faker_locale' => env('APP_FAKER_LOCALE', 'en_US'),
 
+
+
     /*
     |--------------------------------------------------------------------------
     | Encryption Key
@@ -122,5 +124,8 @@ return [
         'driver' => env('APP_MAINTENANCE_DRIVER', 'file'),
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
+
+    'client_id' => env('PASSWORD_CLIENT_ID', ''),
+    'client_secret' => env('PASSWORD_CLIENT_SECRET', ''),
 
 ];
