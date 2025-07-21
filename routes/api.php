@@ -11,4 +11,5 @@ Route::get('/user', function (Request $request) {
 
 Route::prefix('auth')->group(function () {
    Route::post('sign-in', [AuthController::class, 'sign_in']);
+   Route::post('refresh', [AuthController::class, 'refresh']);
 });

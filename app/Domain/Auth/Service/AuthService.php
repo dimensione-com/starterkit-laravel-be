@@ -35,7 +35,7 @@ class AuthService
         if($response->failed()){
             throw new UnauthorizedHttpException('', 'Unauthorized');
         }
-        $parsed_response = json_decode($response->json(), true);
+        $parsed_response = $response->json();
         return [
             'access_token' => $parsed_response['access_token'],
             'refresh_token' => $parsed_response['refresh_token'],
@@ -55,7 +55,7 @@ class AuthService
         if($response->failed()){
             throw new UnauthorizedHttpException('', 'Unauthorized');
         }
-        $parsed_response = json_decode($response->json(), true);
+        $parsed_response = $response->json();
         //dd($parsed_response);
         return [
             'access_token' => $parsed_response['access_token'],
