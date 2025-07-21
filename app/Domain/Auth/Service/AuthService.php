@@ -25,10 +25,10 @@ class AuthService
         }
         //$token = $user->createToken('access-token')->plainTextToken;
         //dd($token);
-        $response = Http::asForm()->post(config('app.url') . '/oauth/token', [
+        $response = Http::asForm()->timeout(2)->post(config('app.url') . '/oauth/token', [
             'grant_type' => 'password',
-            config('services.passport.client_id'),
-            config('services.passport.client_secret'),
+            'client_id' =>config('app.client_id'),
+            'client_secret' => config('app.client_secret'),
             'username' => $data['email'],
             'password' => $data['password']
         ]);
@@ -46,11 +46,11 @@ class AuthService
 
 
     public function refresh(array $data) : array {
-        $response = Http::asForm()->post(config('app.url') . '/oauth/token', [
+        $response = Http::asForm()->timeout(2)->post(config('app.url') . '/oauth/token', [
             'grant_type' => 'refresh_token',
             'refresh_token' => $data['refresh_token'],
-            'client_id' => env('PASSWORD_CLIENT_ID'),
-            'client_secret' => env('PASSWORD_CLIENT_SECRET'),
+            'client_id' =>config('app.client_id'),
+            'client_secret' => config('app.client_secret'),
         ]);
         if($response->failed()){
             throw new UnauthorizedHttpException('', 'Unauthorized');
