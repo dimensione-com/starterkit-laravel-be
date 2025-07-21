@@ -4,6 +4,11 @@ namespace App\Domain\Auth\Service;
 
 use App\Domain\User\Enum\UserStatus;
 use App\Domain\User\Service\UserService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Laravel\Passport\Passport;
+use Laravel\Passport\RefreshToken;
+use Laravel\Passport\Token;
 use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Auth;
@@ -24,7 +29,11 @@ class AuthService
             throw new UnauthorizedHttpException('', 'Unauthorized');
         }
         //$token = $user->createToken('access-token')->plainTextToken;
-        //dd($token);
+
+        $user->tokens()->each(function (Token $token) {
+            $token->revoke();
+            $token->refreshToken?->revoke();
+        });
         $response = Http::asForm()->timeout(2)->post(config('app.url') . '/oauth/token', [
             'grant_type' => 'password',
             'client_id' =>config('app.client_id'),
@@ -46,6 +55,19 @@ class AuthService
 
 
     public function refresh(array $data) : array {
+        // Trova e revoca il vecchio access e refresh token
+        $oldRefreshToken = RefreshToken::where('id', $data['refresh_token'])->first();
+
+        if ($oldRefreshToken) {
+            $accessToken = Token::find($oldRefreshToken->access_token_id);
+
+            if ($accessToken) {
+                $accessToken->revoke();
+            }
+
+            $oldRefreshToken->revoke();
+        }
+
         $response = Http::asForm()->timeout(2)->post(config('app.url') . '/oauth/token', [
             'grant_type' => 'refresh_token',
             'refresh_token' => $data['refresh_token'],
@@ -56,12 +78,26 @@ class AuthService
             throw new UnauthorizedHttpException('', 'Unauthorized');
         }
         $parsed_response = $response->json();
-        //dd($parsed_response);
         return [
             'access_token' => $parsed_response['access_token'],
             'refresh_token' => $parsed_response['refresh_token'],
             'token_type' => 'Bearer',
             'expires_in' => $parsed_response['expires_in'],
         ];
+    }
+
+
+    public function sign_out(Request $request): bool
+    {
+        $user = $request->user();
+
+        if ($user) {
+            $user->tokens->each(function (Token $token) {
+                $token->revoke();
+                $token->refreshToken?->revoke();
+            });
+        }
+
+        return true;
     }
 }

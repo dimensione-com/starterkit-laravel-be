@@ -11,5 +11,6 @@ Route::get('/user', function (Request $request) {
 
 Route::prefix('auth')->group(function () {
    Route::post('sign-in', [AuthController::class, 'sign_in']);
-   Route::post('refresh', [AuthController::class, 'refresh']);
+   Route::post('refresh', [AuthController::class, 'refresh'])->middleware('throttle:10,1');
+   Route::post('sign-out', [AuthController::class, 'sign_out'])->middleware('auth:api');
 });
