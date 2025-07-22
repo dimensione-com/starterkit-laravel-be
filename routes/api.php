@@ -13,4 +13,5 @@ Route::prefix('auth')->group(function () {
    Route::post('sign-in', [AuthController::class, 'sign_in']);
    Route::post('refresh', [AuthController::class, 'refresh'])->middleware('throttle:10,1');
    Route::post('sign-out', [AuthController::class, 'sign_out'])->middleware('auth:api');
+   Route::post('sign-up', [AuthController::class, 'sign_up']);
 });

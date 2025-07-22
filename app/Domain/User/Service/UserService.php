@@ -13,4 +13,9 @@ class UserService
     public function getUserByEmail(string $email) : ?User {
         return $this->userRepository->getByEmail($email);
     }
+
+
+    public function createUser(array $data) : User {
+        return $this->userRepository->create($data);
+    }
 }
