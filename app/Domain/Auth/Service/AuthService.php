@@ -5,14 +5,16 @@ namespace App\Domain\Auth\Service;
 use App\Domain\BlackListToken\Service\BlackListTokenService;
 use App\Domain\User\Enum\UserStatus;
 use App\Domain\User\Service\UserService;
+use App\Mail\SendVerifyEmail;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 use Laravel\Passport\RefreshToken;
 use Laravel\Passport\Token;
 use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Str;
 
 class AuthService
 {
@@ -101,7 +103,8 @@ class AuthService
     }
 
 
-    public function sign_up(array $data): bool {
+    public function sign_up(array $data): bool
+    {
         $created_user = $this->userService->createUser([
             'name' => $data['name'],
             'surname' => $data['surname'],
@@ -114,4 +117,15 @@ class AuthService
         $this->blackListTokenService->create_token_for_user($created_user['id'], $hashedToken);
         return true;
     }
+
+    public function send_email_verification(string $email): bool
+    {
+        $user = $this->userService->getUserByEmail($email);
+        $plainToken = Str::random(64); // token visibile all'utente (es. link)
+        $hashedToken = hash('sha256', $plainToken); // token da salvare nel DB
+        $this->blackListTokenService->create_token_for_user($user['id'], $hashedToken);
+        Mail::to($user['email'])->send(new SendVerifyEmail($hashedToken));
+        return true;
+    }
+
 }
