@@ -121,8 +121,13 @@ class AuthService
     public function send_email_verification(string $email): bool
     {
         $user = $this->userService->getUserByEmail($email);
+        if($user->status === UserStatus::Active->value)
+        {
+            throw new UnauthorizedHttpException('', 'Already Verified');
+        }
         $plainToken = Str::random(64); // token visibile all'utente (es. link)
         $hashedToken = hash('sha256', $plainToken); // token da salvare nel DB
+        $this->blackListTokenService->update_tokens($user->id);
         $this->blackListTokenService->create_token_for_user($user['id'], $hashedToken);
         Mail::to($user['email'])->send(new SendVerifyEmail($hashedToken));
         return true;

@@ -21,6 +21,7 @@ return new class extends Migration
             $table->timestamp('expires_at')->nullable();
             $table->timestamp('used_at')->nullable();
             $table->boolean('used')->default(false);
+            $table->boolean('revoked')->default(false);
             $table->timestamps();
         });
     }
