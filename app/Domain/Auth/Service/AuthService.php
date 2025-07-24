@@ -8,6 +8,7 @@ use App\Domain\User\Enum\UserStatus;
 use App\Domain\User\Service\UserService;
 use App\Mail\SendResetPasswordEmail;
 use App\Mail\SendVerifyEmail;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -131,7 +132,7 @@ class AuthService
         }
         $plainToken = Str::random(64);
         $hashedToken = hash('sha256', $plainToken);
-        $this->blackListTokenService->update_tokens($user->id, BlackListTokenType::Email->value);
+        $this->blackListTokenService->update_tokens($user->id, BlackListTokenType::Email->value, ['revoked' => true]);
         $this->blackListTokenService->create_token_for_user($user['id'], BlackListTokenType::Email->value, $hashedToken);
         Mail::to($user['email'])->send(new SendVerifyEmail($plainToken));
         return true;
@@ -146,7 +147,7 @@ class AuthService
         }
         $plainToken = Str::random(64);
         $hashedToken = hash('sha256', $plainToken);
-        $this->blackListTokenService->update_tokens($user->id, BlackListTokenType::Password->value);
+        $this->blackListTokenService->update_tokens($user->id, BlackListTokenType::Password->value, ['revoked' => true]);
         $this->blackListTokenService->create_token_for_user($user['id'], BlackListTokenType::Password->value, $hashedToken);
         Mail::to($user['email'])->send(new SendResetPasswordEmail($plainToken));
         return true;
@@ -155,8 +156,7 @@ class AuthService
 
     public function reset_password(string $token, string $password): bool
     {
-        $found_token = $this->blackListTokenService->get_user_by_token($token);
-        //dd(!$found_token, Carbon::now() > Carbon::parse($found_token->expires_at),$found_token->revoked === true,$found_token->used === true );
+        $found_token = $this->blackListTokenService->get_user_id_by_token($token);
         if(!$found_token || Carbon::now() > Carbon::parse($found_token->expires_at) || $found_token->revoked === true || $found_token->used === true){
             throw new UnauthorizedHttpException('', 'Unauthorized');
         }
@@ -168,6 +168,21 @@ class AuthService
         $user->save();
         $found_token->used = true;
         $found_token->save();
+        return true;
+    }
+
+    public function confirm_user_account(string $token) : bool
+    {
+        $user_id = $this->blackListTokenService->get_user_id_by_token($token);
+        $user = $this->userService->getUserById($user_id);
+        $token = $this->blackListTokenService->get_token_by_token($token);
+        if(!$token){
+            throw new UnauthorizedHttpException('', 'Unauthorized');
+        }
+        $user->status = UserStatus::Active->value;
+        $user->email_verified_at = Carbon::now();
+        $user->save();
+        $this->blackListTokenService->update_token_by_id($token->id, ['used' => true]);
         return true;
     }
 

@@ -23,4 +23,5 @@ class UserService
     public function createUser(array $data) : User {
         return $this->userRepository->create($data);
     }
+
 }

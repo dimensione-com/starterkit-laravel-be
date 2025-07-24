@@ -2,7 +2,9 @@
 
 namespace App\Domain\User\Repository;
 
+use App\Domain\User\Enum\UserStatus;
 use App\Models\User;
+use Carbon\Carbon;
 
 class UserRepository
 {
@@ -18,4 +20,5 @@ class UserRepository
     public function create(array $data) : User {
         return User::create($data);
     }
+
 }

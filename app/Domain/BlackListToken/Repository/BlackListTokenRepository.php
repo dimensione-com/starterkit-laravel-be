@@ -5,6 +5,7 @@ namespace App\Domain\BlackListToken\Repository;
 use App\Models\BlackListToken;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Request;
 
 class BlackListTokenRepository
 {
@@ -14,21 +15,34 @@ class BlackListTokenRepository
         return true;
     }
 
-    public function get_token_for_user(int $user_id) : Collection
+    public function upgrade_tokens_by_user_id(int $user_id, string $token_type, array $data) : bool
     {
-        return BlackListToken::where('user_id', $user_id)->get();
-    }
-
-    public function upgrade_tokens(int $user_id, string $token_type, array $data) : void
-    {
-        BlackListToken::where('user_id', $user_id)->where('type', $token_type)->update($data);
+        return BlackListToken::where('user_id', $user_id)->where('type', $token_type)->update($data);
     }
 
 
-    public function get_user_by_token(string $token) : ?BlackListToken
+    public function get_token_by_token(string $token) : ?BlackListToken
     {
         $hashed_token = hash('sha256', $token);
         return BlackListToken::where('token', $hashed_token)->first();
+    }
+
+    public function get_user_id_by_token(string $token) : int
+    {
+        $hashed_token = hash('sha256', $token);
+        return BlackListToken::where('token', $hashed_token)->first()->user_id;
+    }
+
+    public function update_tokens_at_used(int $user_id) : void
+    {
+        BlackListToken::where('user_id', $user_id)->update(['used' => true, 'used_at' => Carbon::now(), 'user_agent' => Request::userAgent(), 'ip' => Request::ip()]);
+    }
+
+
+    public function update_token_by_id(int $id, array $data): bool
+    {
+        BlackListToken::find($id)->update($data);
+        return true;
     }
 
 }

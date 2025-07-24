@@ -16,25 +16,30 @@ class BlackListTokenService
         return $this->blackListTokenRepository->create_token_for_user($user_id, $token_type, $token);
     }
 
-    /**
-     * @return \Illuminate\Database\Eloquent\Collection<int, BlackListToken>
-     */
-    public function revoke_token_for_user(int $user_id) : Collection
+    public function update_tokens(int $user_id, string $token_type, array $data) : bool
     {
-        return $this->blackListTokenRepository->get_token_for_user($user_id);
-    }
-
-
-    public function update_tokens(int $user_id, string $token_type) : bool
-    {
-        $this->blackListTokenRepository->upgrade_tokens($user_id, $token_type, ['revoked' => true]);
+        $this->blackListTokenRepository->upgrade_tokens_by_user_id($user_id, $token_type, $data);
         return true;
     }
 
 
-    public function get_user_by_token(string $token) : ?BlackListToken
+    public function get_user_id_by_token(string $token) : int
     {
-        return $this->blackListTokenRepository->get_user_by_token($token);
+        return $this->blackListTokenRepository->get_user_id_by_token($token);
     }
+
+
+    public function get_token_by_token(string $token) : ?BlackListToken
+    {
+        return $this->blackListTokenRepository->get_token_by_token($token);
+    }
+
+
+    public function update_token_by_id(int $id, array $data) : bool {
+        return $this->blackListTokenRepository->update_token_by_id($id, $data);
+    }
+
+
+
 
 }
