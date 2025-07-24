@@ -52,4 +52,14 @@ class AuthController extends Controller
         return response()->json(['success' => $result]);
     }
 
+    public function confirm_user_account(string $token): JsonResponse
+    {
+        $result = $this->authService->confirm_user_account($token);
+        return response()->json([
+            'success' => $result,
+            'message' => $result ? 'Account verificato con successo.' : 'Token non valido o già usato.'
+        ]);
+    }
+
+
 }

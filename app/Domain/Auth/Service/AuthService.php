@@ -127,9 +127,17 @@ class AuthService
         }
         $plainToken = Str::random(64); // token visibile all'utente (es. link)
         $hashedToken = hash('sha256', $plainToken); // token da salvare nel DB
-        $this->blackListTokenService->update_tokens($user->id);
+        $this->blackListTokenService->update_tokens_for_revoke($user->id);
         $this->blackListTokenService->create_token_for_user($user['id'], $hashedToken);
         Mail::to($user['email'])->send(new SendVerifyEmail($hashedToken));
+        return true;
+    }
+
+    public function confirm_user_account(string $token) : bool
+    {
+        $user_id = $this->blackListTokenService->getUserByToken($token);
+        $this->userService->activateUser($user_id);
+        $this->blackListTokenService->update_tokens_at_used($user_id);
         return true;
     }
 

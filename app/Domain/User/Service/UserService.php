@@ -18,4 +18,10 @@ class UserService
     public function createUser(array $data) : User {
         return $this->userRepository->create($data);
     }
+
+    public function activateUser(int $user_id) : void
+    {
+        $this->userRepository->activate($user_id);
+    }
+
 }

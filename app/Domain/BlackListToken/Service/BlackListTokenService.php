@@ -25,10 +25,22 @@ class BlackListTokenService
     }
 
 
-    public function update_tokens(int $user_id) : bool
+    public function update_tokens_for_revoke(int $user_id) : bool
     {
-        $this->blackListTokenRepository->upgrade_token($user_id, ['revoked' => true]);
+        $this->blackListTokenRepository->upgrade_token_for_revoke($user_id, ['revoked' => true]);
         return true;
     }
+
+    public function getUserByToken($token) : int
+    {
+        return $this->blackListTokenRepository->getUser($token);
+    }
+
+    public function update_tokens_at_used(int $user_id) : bool
+    {
+        $this->blackListTokenRepository->update_tokens_at_used($user_id);
+        return true;
+    }
+
 
 }

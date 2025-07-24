@@ -15,4 +15,5 @@ Route::prefix('auth')->group(function () {
    Route::post('sign-out', [AuthController::class, 'sign_out'])->middleware('auth:api');
    Route::post('sign-up', [AuthController::class, 'sign_up']);
    Route::post('send-email-verification', [AuthController::class, 'send_email_verification']);
+   Route::post('confirm-user-account/{token}', [AuthController::class, 'confirm_user_account']);
 });

@@ -52,7 +52,7 @@ body {
         <p>
             Ti abbiamo inviato un link di verifica alla tua email.
             Clicca qui per verificare il tuo account.
-            <a href="{{ url('/verify-email/' . $hashedToken) }}">
+            <a href="{{ url('/confirm-user-account/' . $hashedToken) }}">
                 Verifica Email
             </a>
         </p>
