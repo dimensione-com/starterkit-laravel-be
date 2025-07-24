@@ -15,7 +15,8 @@ class BlackListToken extends Model
         'token',
         'expires_at',
         'used',
-        'revoked'
+        'revoked',
+        'type'
     ];
 
 

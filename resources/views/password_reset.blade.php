@@ -7,8 +7,8 @@
 
     <!-- Stile base (puoi sostituirlo con Tailwind o Bootstrap se preferisci) -->
     <style>
-body {
-    font-family: Arial, sans-serif;
+        body {
+            font-family: Arial, sans-serif;
             background-color: #f3f4f6;
             display: flex;
             justify-content: center;
@@ -17,8 +17,8 @@ body {
         }
 
         .card {
-    background: white;
-    padding: 2rem;
+            background: white;
+            padding: 2rem;
             border-radius: 10px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.1);
             width: 100%;
@@ -27,7 +27,7 @@ body {
         }
 
         .button {
-    margin-top: 1.5rem;
+            margin-top: 1.5rem;
             background-color: #2563eb;
             color: white;
             padding: 0.7rem 1.5rem;
@@ -37,25 +37,25 @@ body {
         }
 
         .button:hover {
-    background-color: #1e40af;
+            background-color: #1e40af;
         }
 
         .message {
-    color: green;
-    margin-top: 1rem;
+            color: green;
+            margin-top: 1rem;
         }
     </style>
 </head>
 <body>
-    <div class="card">
-        <h2>Verifica il tuo indirizzo email</h2>
-        <p>
-            Ti abbiamo inviato un link di verifica alla tua email.
-            Clicca qui per verificare il tuo account.
-            <a href="{{ url('/verify-email/' . $token)}}">
-                Verifica Email
-            </a>
-        </p>
-    </div>
+<div class="card">
+    <h2>Richiesta di cambio password</h2>
+    <p>
+        Ti abbiamo inviato un link per resettare la tua password.
+        Clicca qui per andare al link.
+        <a href="{{ url('/reset-password/' . $token)}}">
+            Reset Password
+        </a>
+    </p>
+</div>
 </body>
 </html>

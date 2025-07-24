@@ -9,8 +9,9 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class SendVerifyEmail extends Mailable
+class SendResetPasswordEmail extends Mailable
 {
+
     use Queueable, SerializesModels;
 
     /**
@@ -27,7 +28,7 @@ class SendVerifyEmail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Conferma email',
+            subject: 'Reset password',
             from: env('MAIL_FROM_ADDRESS'),
         );
     }
@@ -38,7 +39,7 @@ class SendVerifyEmail extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'email_verification',
+            view: 'password_reset',
             with: ['token' => $this->token],
         );
     }

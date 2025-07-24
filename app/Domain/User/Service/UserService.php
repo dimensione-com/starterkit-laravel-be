@@ -15,6 +15,11 @@ class UserService
     }
 
 
+    public function getUserById(int $id) : ?User
+    {
+        return $this->userRepository->getUserById($id);
+    }
+
     public function createUser(array $data) : User {
         return $this->userRepository->create($data);
     }

@@ -1,5 +1,6 @@
 <?php
 
+use App\Domain\BlackListToken\Enum\BlackListTokenType;
 use App\Models\User;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
@@ -17,6 +18,7 @@ return new class extends Migration
             $table->foreignIdFor(User::class, "user_id")->constrained()->onDelete('cascade');
             $table->string('ip')->nullable();
             $table->string('user_agent')->nullable();
+            $table->enum('type', [BlackListTokenType::getValues()])->default(BlackListTokenType::Email->value);
             $table->string('token')->unique();
             $table->timestamp('expires_at')->nullable();
             $table->timestamp('used_at')->nullable();

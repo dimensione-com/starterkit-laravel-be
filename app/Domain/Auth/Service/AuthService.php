@@ -2,10 +2,13 @@
 
 namespace App\Domain\Auth\Service;
 
+use App\Domain\BlackListToken\Enum\BlackListTokenType;
 use App\Domain\BlackListToken\Service\BlackListTokenService;
 use App\Domain\User\Enum\UserStatus;
 use App\Domain\User\Service\UserService;
+use App\Mail\SendResetPasswordEmail;
 use App\Mail\SendVerifyEmail;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -112,9 +115,10 @@ class AuthService
             'username' => $data['username'],
             'password' => Hash::make($data['password']),
         ]);
-        $plainToken = Str::random(64); // token visibile all'utente (es. link)
-        $hashedToken = hash('sha256', $plainToken); // token da salvare nel DB
-        $this->blackListTokenService->create_token_for_user($created_user['id'], $hashedToken);
+        $plainToken = Str::random(64);
+        $hashedToken = hash('sha256', $plainToken);
+        $this->blackListTokenService->create_token_for_user($created_user['id'], BlackListTokenType::Email->value, $hashedToken);
+        Mail::to($created_user->email)->send(new SendVerifyEmail($plainToken));
         return true;
     }
 
@@ -125,11 +129,45 @@ class AuthService
         {
             throw new UnauthorizedHttpException('', 'Already Verified');
         }
-        $plainToken = Str::random(64); // token visibile all'utente (es. link)
-        $hashedToken = hash('sha256', $plainToken); // token da salvare nel DB
-        $this->blackListTokenService->update_tokens($user->id);
-        $this->blackListTokenService->create_token_for_user($user['id'], $hashedToken);
-        Mail::to($user['email'])->send(new SendVerifyEmail($hashedToken));
+        $plainToken = Str::random(64);
+        $hashedToken = hash('sha256', $plainToken);
+        $this->blackListTokenService->update_tokens($user->id, BlackListTokenType::Email->value);
+        $this->blackListTokenService->create_token_for_user($user['id'], BlackListTokenType::Email->value, $hashedToken);
+        Mail::to($user['email'])->send(new SendVerifyEmail($plainToken));
+        return true;
+    }
+
+
+    public function send_reset_password_link(string $email): bool
+    {
+        $user = $this->userService->getUserByEmail($email);
+        if($user->status !== UserStatus::Active->value){
+            throw new UnauthorizedHttpException('', 'Unauthorized');
+        }
+        $plainToken = Str::random(64);
+        $hashedToken = hash('sha256', $plainToken);
+        $this->blackListTokenService->update_tokens($user->id, BlackListTokenType::Password->value);
+        $this->blackListTokenService->create_token_for_user($user['id'], BlackListTokenType::Password->value, $hashedToken);
+        Mail::to($user['email'])->send(new SendResetPasswordEmail($plainToken));
+        return true;
+    }
+
+
+    public function reset_password(string $token, string $password): bool
+    {
+        $found_token = $this->blackListTokenService->get_user_by_token($token);
+        //dd(!$found_token, Carbon::now() > Carbon::parse($found_token->expires_at),$found_token->revoked === true,$found_token->used === true );
+        if(!$found_token || Carbon::now() > Carbon::parse($found_token->expires_at) || $found_token->revoked === true || $found_token->used === true){
+            throw new UnauthorizedHttpException('', 'Unauthorized');
+        }
+        $user = $this->userService->getUserById($found_token->user_id);
+        if($user->status !== UserStatus::Active->value){
+            throw new UnauthorizedHttpException('', 'Unauthorized');
+        }
+        $user->password = Hash::make($password);
+        $user->save();
+        $found_token->used = true;
+        $found_token->save();
         return true;
     }
 

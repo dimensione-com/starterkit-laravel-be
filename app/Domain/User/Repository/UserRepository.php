@@ -11,7 +11,10 @@ class UserRepository
         return User::where('email', '=', $email)->first();
     }
 
-
+    public function getUserById(int $userId): ?User
+    {
+        return User::find($userId);
+    }
     public function create(array $data) : User {
         return User::create($data);
     }

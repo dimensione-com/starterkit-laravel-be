@@ -11,9 +11,9 @@ class BlackListTokenService
 
     public function __construct(private readonly BlackListTokenRepository $blackListTokenRepository){}
 
-    public function create_token_for_user(int $user_id, string $token) : bool
+    public function create_token_for_user(int $user_id, string $token_type, string $token) : bool
     {
-        return $this->blackListTokenRepository->create_token_for_user($user_id, $token);
+        return $this->blackListTokenRepository->create_token_for_user($user_id, $token_type, $token);
     }
 
     /**
@@ -25,10 +25,16 @@ class BlackListTokenService
     }
 
 
-    public function update_tokens(int $user_id) : bool
+    public function update_tokens(int $user_id, string $token_type) : bool
     {
-        $this->blackListTokenRepository->upgrade_token($user_id, ['revoked' => true]);
+        $this->blackListTokenRepository->upgrade_tokens($user_id, $token_type, ['revoked' => true]);
         return true;
+    }
+
+
+    public function get_user_by_token(string $token) : ?BlackListToken
+    {
+        return $this->blackListTokenRepository->get_user_by_token($token);
     }
 
 }
