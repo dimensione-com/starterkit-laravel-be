@@ -9,8 +9,12 @@ use App\Domain\Auth\DTO\SendResetPasswordRequestDTO;
 use App\Domain\Auth\DTO\SignInRequestDTO;
 use App\Domain\Auth\DTO\SignUpRequestDTO;
 use App\Domain\Auth\Service\AuthService;
+use http\Exception\BadHeaderException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use mysql_xdevapi\Exception;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
 
 class AuthController extends Controller
 {
@@ -70,11 +74,18 @@ class AuthController extends Controller
 
     public function confirm_user_account(string $token): JsonResponse
     {
-        $result = $this->authService->confirm_user_account($token);
-        return response()->json([
-            'success' => $result,
-            'message' => $result ? 'Account verificato con successo.' : 'Token non valido o già usato.'
-        ]);
+        if(empty($token))
+        {
+            throw new NotFoundHttpException('Token inserito non valido.');
+        }
+        else
+        {
+            $result = $this->authService->confirm_user_account($token);
+            return response()->json([
+                'success' => $result,
+                'message' => $result ? 'Account verificato con successo.' : 'Token non valido o già usato. Attenzione se hai attiva una VPN ti chiediamo di disattivarla.'
+            ]);
+        }
     }
 
 

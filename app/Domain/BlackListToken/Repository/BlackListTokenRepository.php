@@ -27,15 +27,15 @@ class BlackListTokenRepository
         return BlackListToken::where('token', $hashed_token)->first();
     }
 
-    public function get_user_id_by_token(string $token) : int
+    public function get_user_id_by_token(string $token) : int|null
     {
         $hashed_token = hash('sha256', $token);
-        return BlackListToken::where('token', $hashed_token)->first()->user_id;
+        return BlackListToken::where('token', $hashed_token)->first() ? BlackListToken::where('token', $hashed_token)->first()->user_id : null;
     }
 
-    public function update_tokens_at_used(int $user_id) : void
+    public function update_tokens_at_used(int $user_id, string $ip, array $ipResult) : void
     {
-        BlackListToken::where('user_id', $user_id)->update(['used' => true, 'used_at' => Carbon::now(), 'user_agent' => Request::userAgent(), 'ip' => Request::ip()]);
+        BlackListToken::where('user_id', $user_id)->update(['used' => true, 'used_at' => Carbon::now(), 'user_agent' => $ipResult['userAgent'], 'ip' => $ip]);
     }
 
 
@@ -43,6 +43,20 @@ class BlackListTokenRepository
     {
         BlackListToken::find($id)->update($data);
         return true;
+    }
+
+    public function check_token_validity(string $token) : bool
+    {
+        $expireddateonstorage = BlackListToken::where('token', hash('sha256', $token))->first()->expires_at;
+        $now = Carbon::now();
+        if($expireddateonstorage > $now)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
     }
 
 }

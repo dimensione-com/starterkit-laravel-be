@@ -23,9 +23,14 @@ class BlackListTokenService
     }
 
 
-    public function get_user_id_by_token(string $token) : int
+    public function get_user_id_by_token(string $token) : int|null
     {
         return $this->blackListTokenRepository->get_user_id_by_token($token);
+    }
+
+    public function update_tokens_at_used(int $user_id, string $ip, array $ipResult) : void
+    {
+        $this->blackListTokenRepository->update_tokens_at_used($user_id, $ip, $ipResult);
     }
 
 
@@ -39,7 +44,9 @@ class BlackListTokenService
         return $this->blackListTokenRepository->update_token_by_id($id, $data);
     }
 
-
-
+    public function check_token_validity(string $token) : bool
+    {
+        return $this->blackListTokenRepository->check_token_validity($token);
+    }
 
 }

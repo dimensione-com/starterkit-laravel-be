@@ -6,9 +6,9 @@ use App\Domain\BlackListToken\Enum\BlackListTokenType;
 use App\Domain\BlackListToken\Service\BlackListTokenService;
 use App\Domain\User\Enum\UserStatus;
 use App\Domain\User\Service\UserService;
+use App\Domain\IpControll\Service\IpControllService;
 use App\Mail\SendResetPasswordEmail;
 use App\Mail\SendVerifyEmail;
-use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -23,7 +23,7 @@ use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
 class AuthService
 {
 
-    public function __construct(private readonly UserService $userService, private readonly BlackListTokenService $blackListTokenService){}
+    public function __construct(private readonly UserService $userService, private readonly BlackListTokenService $blackListTokenService, private readonly IpControllService $ipControllService){}
 
     public function sign_in(array $data) : array {
         $user = $this->userService->getUserByEmail($data['email']);
@@ -116,10 +116,9 @@ class AuthService
             'username' => $data['username'],
             'password' => Hash::make($data['password']),
         ]);
-        $plainToken = Str::random(64);
-        $hashedToken = hash('sha256', $plainToken);
-        $this->blackListTokenService->create_token_for_user($created_user['id'], BlackListTokenType::Email->value, $hashedToken);
-        Mail::to($created_user->email)->send(new SendVerifyEmail($plainToken));
+        $plainToken = Str::random(64); // token visibile all'utente (es. link)
+        $hashedToken = hash('sha256', $plainToken); // token da salvare nel DB
+        $this->blackListTokenService->create_token_for_user($created_user['id'], BlackListTokenType::Email->value , $hashedToken);
         return true;
     }
 
@@ -173,16 +172,34 @@ class AuthService
 
     public function confirm_user_account(string $token) : bool
     {
+        //flusso attuale
         $user_id = $this->blackListTokenService->get_user_id_by_token($token);
-        $user = $this->userService->getUserById($user_id);
-        $token = $this->blackListTokenService->get_token_by_token($token);
-        if(!$token){
+        if(!$user_id)
+        {
             throw new UnauthorizedHttpException('', 'Unauthorized');
         }
-        $user->status = UserStatus::Active->value;
-        $user->email_verified_at = Carbon::now();
-        $user->save();
-        $this->blackListTokenService->update_token_by_id($token->id, ['used' => true]);
+
+        $user = $this->userService->getUserById($user_id);
+        if($user->status === UserStatus::Active->value)
+        {
+            throw new UnauthorizedHttpException('', 'Already Verified');
+        }
+
+        $ip = request()->ip();
+        $ipResult = $this->ipControllService->checkIp($ip);
+        if($ipResult['isItalian'] === true && $ipResult['isVpnOrProxy'] === false)
+        {
+            throw new UnauthorizedHttpException('', 'Unauthorized');
+        }
+
+        $responstoken = $this->blackListTokenService->check_token_validity($token);
+        if($responstoken === false)
+        {
+            throw new UnauthorizedHttpException('', 'Unauthorized');
+        }
+
+        $this->blackListTokenService->update_tokens_at_used($user_id, $ip, $ipResult);
+        $this->userService->activateUser($user_id);
         return true;
     }
 
