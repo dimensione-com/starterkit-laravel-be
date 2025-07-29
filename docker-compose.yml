@@ -1,20 +1,42 @@
 version: '3.8'
 
 services:
-    app:
+    app_a:
         build:
             context: .
             dockerfile: Dockerfile
-        container_name: laravel_app
+        container_name: laravel_app_a
         ports:
             - "8000:8000"
-        volumes:
-            - .:/var/www
+        volumes: []
+        entrypoint: ["sh", "/usr/local/bin/entrypoint_1.sh"]
         depends_on:
             - db
+        networks:
+            - laravel_net
         environment:
             DB_HOST: db
-            DB_PORT: 5432
+            DB_PORT: 5433
+            DB_DATABASE: laravel
+            DB_USERNAME: laravel
+            DB_PASSWORD: secret
+
+    app_b:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        container_name: laravel_app_b
+        ports:
+            - "8001:8001"
+        volumes: []
+        entrypoint: [ "sh", "/usr/local/bin/entrypoint_2.sh" ]
+        depends_on:
+            - db
+        networks:
+            - laravel_net
+        environment:
+            DB_HOST: db
+            DB_PORT: 5433
             DB_DATABASE: laravel
             DB_USERNAME: laravel
             DB_PASSWORD: secret
@@ -22,14 +44,31 @@ services:
     db:
         image: postgres:15
         container_name: pg_db
+        restart: unless-stopped
+        command: ["postgres", "-p", "5433"]
         ports:
-            - "5432:5432"
+            - "5433:5433"
         environment:
-            POSTGRES_DB: laravel
             POSTGRES_USER: laravel
             POSTGRES_PASSWORD: secret
+            POSTGRES_DB: laravel
         volumes:
             - pgdata:/var/lib/postgresql/data
+        networks:
+            - laravel_net
+
+    smtp:
+        image: mailhog/mailhog:v1.0.1
+        container_name: mailhog_smtp
+        ports:
+            - "8025:8025"
+        networks:
+            - laravel_net
+
 
 volumes:
     pgdata:
+
+networks:
+    laravel_net:
+        driver: bridge

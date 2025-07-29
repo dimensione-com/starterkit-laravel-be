@@ -18,4 +18,5 @@ Route::prefix('auth')->group(function () {
    Route::get('confirm-user-account/{token}', [AuthController::class, 'confirm_user_account']);
    Route::post('send-reset-password', [AuthController::class, 'send_reset_password_email']);
    Route::post('reset-password', [AuthController::class, 'reset_password']);
+   Route::get('client-credentials', [AuthController::class, 'get_client_credentials']);
 });

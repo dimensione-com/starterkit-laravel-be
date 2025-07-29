@@ -18,16 +18,19 @@ RUN apt-get update && apt-get install -y \
 RUN docker-php-ext-install pdo pdo_pgsql mbstring zip xml curl
 
 # Install Composer
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Set working directory
 WORKDIR /var/www
 
-COPY . .
 
-RUN composer install
+COPY . /var/www
 
-# Set permissions
+# Copia i file entrypoint esplicitamente da cartella dedicata
+COPY ./entrypoint_1.sh /usr/local/bin/entrypoint_1.sh
+COPY ./entrypoint_2.sh /usr/local/bin/entrypoint_2.sh
+
+RUN chmod +x /usr/local/bin/entrypoint_1.sh /usr/local/bin/entrypoint_2.sh
+
+
+# Permissions
 RUN chown -R www-data:www-data /var/www && chmod -R 755 /var/www
-
-ENTRYPOINT ["sh", "./entrypoint.sh"]

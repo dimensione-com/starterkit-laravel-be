@@ -14,8 +14,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
+use Laravel\Passport\Http\Controllers\AccessTokenController;
 use Laravel\Passport\RefreshToken;
 use Laravel\Passport\Token;
 use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
@@ -36,11 +38,11 @@ class AuthService
             throw new UnauthorizedHttpException('', 'Unauthorized');
         }
         //$token = $user->createToken('access-token')->plainTextToken;
-
         $user->tokens()->each(function (Token $token) {
             $token->revoke();
             $token->refreshToken?->revoke();
         });
+        Log::info('user', [$user]);
         $response = Http::asForm()->timeout(2)->post(config('app.url') . '/oauth/token', [
             'grant_type' => 'password',
             'client_id' =>config('app.client_id'),
@@ -48,6 +50,7 @@ class AuthService
             'username' => $data['email'],
             'password' => $data['password']
         ]);
+        Log::info('response', [$response]);
         if($response->failed()){
             throw new UnauthorizedHttpException('', 'Unauthorized');
         }
@@ -119,6 +122,7 @@ class AuthService
         $plainToken = Str::random(64); // token visibile all'utente (es. link)
         $hashedToken = hash('sha256', $plainToken); // token da salvare nel DB
         $this->blackListTokenService->create_token_for_user($created_user['id'], BlackListTokenType::Email->value , $hashedToken);
+        Mail::to($created_user->email)->send(new SendVerifyEmail($plainToken));
         return true;
     }
 
@@ -168,6 +172,39 @@ class AuthService
         $found_token->used = true;
         $found_token->save();
         return true;
+    }
+
+
+    public function activate_user_account(string $token): bool {
+        $user_id = $this->blackListTokenService->get_user_id_by_token($token);
+        if(!$user_id)
+        {
+            throw new UnauthorizedHttpException('', 'Unauthorized');
+        }
+
+        $user = $this->userService->getUserById($user_id);
+        if($user->status === UserStatus::Active->value)
+        {
+            throw new UnauthorizedHttpException('', 'Already Verified');
+        }
+
+        $ip = request()->ip();
+        $forwardedFor = request()->header('X-Forwarded-For');
+        $userAgent = request()->header('User-Agent');
+        if (
+            $forwardedFor && $forwardedFor !== $ip ||
+            preg_match('/^(18\.|35\.|34\.|104\.|172\.(1[6-9]|2[0-9]|3[0-1])\.)/', $ip)
+        )
+        {
+            Log::warning("Possibile VPN/proxy rilevato per IP: $ip (Forwarded: $forwardedFor)");
+            throw new UnauthorizedHttpException('', 'VPN/proxy sospetto rilevato');
+        }
+        $this->blackListTokenService->update_tokens_at_used($user_id, $ip, ['userAgent' => $userAgent]);
+        $this->userService->activateUser($user_id);
+        return true;
+
+
+
     }
 
     public function confirm_user_account(string $token) : bool
